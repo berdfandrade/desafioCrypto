@@ -12,9 +12,9 @@ export default function gerarNumeroDeCartao(): string{
 
   for (let j = 0; j < 4; j++) {
     let celulaGerada = generateCell();
-    numeroCartao += celulaGerada + " ";
+    numeroCartao += celulaGerada;
   }
-
+  
   return numeroCartao;
 }
 
