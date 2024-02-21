@@ -17,6 +17,8 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Bem-vindo à minha API!");
 });
 
+
+
 app.get("/transactions", async (req: Request, res: Response) => {
     try {
       // Query para selecionar todos os registros da tabela transactions
