@@ -5,5 +5,3 @@ export default function hashSHA512(input : string) : string {
     hash.update(input);
     return hash.digest('hex')
 }
-
-console.log(hashSHA512('1467635865287927'))
