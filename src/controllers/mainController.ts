@@ -11,8 +11,8 @@ export default class MainController {
     res.status(200).send("Bem-vindo à minha API!");
   }
 
-  static async salvarDadosUsuario(dados: IDados): Promise<void> {
-    const { nome, cartao } = dados;
+  static async salvarDadosUsuario(req : Request, res : Response): Promise<void> {
+    const { nome, cartao } = req.body;
     const client = await pool.connect();
     try {
       await client.query(
