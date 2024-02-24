@@ -7,47 +7,51 @@ jest.mock('../dbConfig/poolConfig', () => ({
 }));
 
 describe('MainController - listarDadosUsuarios', () => {
-  let req: Partial<Request>;
-  let res: Partial<Response>;
-  let mockSend: jest.Mock;
-  let mockStatus: jest.Mock;
+  let req: Request;
+  let res: Response;
+  let mockClient: any;
 
   beforeEach(() => {
-    req = {};
-    mockSend = jest.fn();
-    mockStatus = jest.fn(() => ({ send: mockSend }));
-    res = { status: mockStatus } as Partial<Response>;
+    req = {} as Request;
+    res = {} as Response;
+    res.status = jest.fn().mockReturnValue(res);
+    res.send = jest.fn().mockReturnValue(res);
+    mockClient = {
+      query: jest.fn(),
+      release: jest.fn(),
+    };
+    (pool.connect as jest.Mock).mockResolvedValue(mockClient);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should return a list of users when database query is successful', async () => {
-    const mockQuery = jest.fn().mockResolvedValue({
-      rows: [{ id: 1, userDocument: '123456789', creditCardToken: 'token', value: 100 }],
-    });
-    const mockClient = { query: mockQuery };
-    (pool.connect as jest.Mock).mockResolvedValueOnce(mockClient);
+  it('deve retornar os dados dos usuários com status 200 quando a consulta for bem-sucedida', async () => {
+    const mockRows = [{ id: 1, nome: 'Usuário 1' }, { id: 2, nome: 'Usuário 2' }];
+    const mockResult = { rows: mockRows };
+    mockClient.query.mockResolvedValueOnce(mockResult);
 
-    await MainController.listarDadosUsuarios(req as Request, res as Response);
+    await MainController.listarDadosUsuarios(req, res);
 
-    expect(mockQuery).toHaveBeenCalledWith('SELECT * FROM transactions');
-    expect(mockStatus).toHaveBeenCalledWith(200);
-    expect(mockSend).toHaveBeenCalledWith([{ id: 1, userDocument: '123456789', creditCardToken: 'token', value: 100 }]);
+    expect(pool.connect).toHaveBeenCalled();
+    expect(mockClient.query).toHaveBeenCalledWith(`SELECT * FROM transactions`);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith(mockRows);
+    expect(mockClient.release).toHaveBeenCalled();
   });
 
-  it('should handle database error properly', async () => {
-    const mockError = new Error('Database error');
-    const mockQuery = jest.fn().mockRejectedValue(mockError);
-    const mockClient = { query: mockQuery };
-    (pool.connect as jest.Mock).mockResolvedValueOnce(mockClient);
+  it('deve retornar status 500 e uma mensagem de erro quando ocorrer um erro na consulta', async () => {
+    const mockError = new Error('Erro ao listar dados de usuários');
+    mockClient.query.mockRejectedValueOnce(mockError);
 
-    await MainController.listarDadosUsuarios(req as Request, res as Response);
+    await MainController.listarDadosUsuarios(req, res);
 
-    expect(mockQuery).toHaveBeenCalledWith('SELECT * FROM transactions');
-    expect(mockStatus).toHaveBeenCalledWith(500);
-    expect(mockSend).toHaveBeenCalledWith('Ocorreu um erro ao listar os dados de usuários');
+    expect(pool.connect).toHaveBeenCalled();
+    expect(mockClient.query).toHaveBeenCalledWith(`SELECT * FROM transactions`);
     expect(console.log).toHaveBeenCalledWith('Erro ao listar dados de usuários', mockError);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).toHaveBeenCalledWith('Ocorreu um erro ao listar os dados de usuários');
+    expect(mockClient.release).toHaveBeenCalled();
   });
 });
