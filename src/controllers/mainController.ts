@@ -31,7 +31,7 @@ export default class MainController {
       }
     }
   }
-
+ 
   static async atualizarDadosUsuarios(
     req: Request,
     res: Response
